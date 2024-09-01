@@ -4,6 +4,7 @@ import json
 import psycopg
 from dataclasses import dataclass
 import logging
+import time
 from typing import Any, Dict
 
 
@@ -14,7 +15,20 @@ class Database:
     @classmethod
     def open(cls, database_url: str) -> "Database":
         log = logging.getLogger(__name__)
-        conn = psycopg.connect(database_url)
+        # 简单重试以应对容器启动时数据库尚未就绪
+        last_err: Exception | None = None
+        for attempt in range(1, 16):  # ~30s（1,2,2,3,3...）
+            try:
+                conn = psycopg.connect(database_url)
+                break
+            except Exception as e:
+                last_err = e
+                sleep_s = 2 if attempt > 1 else 1
+                log.warning("db_connect_retry attempt=%s sleep=%ss", attempt, sleep_s)
+                time.sleep(sleep_s)
+        else:
+            # 用最后一次异常抛出
+            raise last_err  # type: ignore[misc]
         db = cls(conn)
         db._init_schema()
         log.info("db_open")

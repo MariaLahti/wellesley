@@ -124,6 +124,8 @@ LOGIN_HTML = """
     <style>
       body { background:#0b1220; color:#e5e7eb; }
       .card { background:#0f172a; border:1px solid #1f2937; }
+      h4.mb-3 { color:#ffffff; }
+      .form-label { color:#e5e7eb; }
       .form-control { background:#0f172a; color:#e5e7eb; border-color:#334155; }
       .btn-primary { background:#3b82f6; border-color:#3b82f6; }
     </style>
