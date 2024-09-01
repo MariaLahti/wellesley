@@ -1,0 +1,75 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: wellesley
+      POSTGRES_PASSWORD: wellesley
+      POSTGRES_DB: wellesley
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://wellesley:wellesley@db:5432/wellesley
+      - BASE_URL=${BASE_URL}
+      - TOKEN=${TOKEN}
+      - USER_AGENT=${USER_AGENT}
+      - ACCEPT_LANGUAGE=${ACCEPT_LANGUAGE}
+      - CITY_ID=${CITY_ID}
+      - DEVICE=${DEVICE}
+      - DEVICE_UU_TOKEN=${DEVICE_UU_TOKEN}
+      - CHANNEL=${CHANNEL}
+      - PLATFORM=${PLATFORM}
+      - SYS_VERSION=${SYS_VERSION}
+      - REGISTRATION_ID=${REGISTRATION_ID}
+      - SCHEDULE_INTERVAL_MINUTES=${SCHEDULE_INTERVAL_MINUTES:-30}
+      - DOMESTIC_CATEGORY_ID=${DOMESTIC_CATEGORY_ID}
+      - OVERSEAS_CATEGORY_ID=${OVERSEAS_CATEGORY_ID}
+      - MAX_PAGES=${MAX_PAGES}
+      - DELAY_MIN_SECONDS=${DELAY_MIN_SECONDS:-0.4}
+      - DELAY_MAX_SECONDS=${DELAY_MAX_SECONDS:-1.2}
+      - WEB_USERNAME=${WEB_USERNAME}
+      - WEB_PASSWORD=${WEB_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY:-please-change-me}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    command: ["python", "-m", "src.web"]
+
+  scraper:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://wellesley:wellesley@db:5432/wellesley
+      - BASE_URL=${BASE_URL}
+      - TOKEN=${TOKEN}
+      - USER_AGENT=${USER_AGENT}
+      - ACCEPT_LANGUAGE=${ACCEPT_LANGUAGE}
+      - CITY_ID=${CITY_ID}
+      - DEVICE=${DEVICE}
+      - DEVICE_UU_TOKEN=${DEVICE_UU_TOKEN}
+      - CHANNEL=${CHANNEL}
+      - PLATFORM=${PLATFORM}
+      - SYS_VERSION=${SYS_VERSION}
+      - REGISTRATION_ID=${REGISTRATION_ID}
+      - SCHEDULE_INTERVAL_MINUTES=${SCHEDULE_INTERVAL_MINUTES:-30}
+      - DOMESTIC_CATEGORY_ID=${DOMESTIC_CATEGORY_ID}
+      - OVERSEAS_CATEGORY_ID=${OVERSEAS_CATEGORY_ID}
+      - MAX_PAGES=${MAX_PAGES}
+      - DELAY_MIN_SECONDS=${DELAY_MIN_SECONDS:-0.4}
+      - DELAY_MAX_SECONDS=${DELAY_MAX_SECONDS:-1.2}
+      - WEB_USERNAME=${WEB_USERNAME}
+      - WEB_PASSWORD=${WEB_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY:-please-change-me}
+    depends_on:
+      - db
+    command: ["python", "-m", "src.cli", "run"]
+
+volumes:
+  pgdata:
+
+

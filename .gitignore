@@ -1,0 +1,13 @@
+# IntelliJ project files
+.idea
+*.iml
+out
+gen
+
+.specstory
+
+.env
+
+test.http
+
+.venv
