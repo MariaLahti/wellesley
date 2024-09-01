@@ -35,36 +35,52 @@ class Database:
         return db
 
     def _init_schema(self) -> None:
+        log = logging.getLogger(__name__)
         with self.conn.cursor() as cur:
-            cur.execute("DROP TABLE IF EXISTS activity_detail;")
-            cur.execute(
-                """
-                CREATE TABLE activity_detail (
-                    id SERIAL PRIMARY KEY,
-                    activity_id TEXT NOT NULL,
-                    type TEXT NOT NULL,
-                    date_key TEXT NOT NULL,
-                    activity_data JSONB NOT NULL,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    UNIQUE(activity_id, date_key)
+            # 检查表是否已存在
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'activity_detail'
                 );
-                """
-            )
-            self.conn.commit()
+            """)
+            table_exists = cur.fetchone()[0]
+            
+            if not table_exists:
+                log.info("Creating activity_detail table as it doesn't exist")
+                cur.execute(
+                    """
+                    CREATE TABLE activity_detail (
+                        id SERIAL PRIMARY KEY,
+                        activity_id TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        date_key TEXT NOT NULL,
+                        platform TEXT NOT NULL,
+                        activity_data JSONB NOT NULL,
+                        created_at TIMESTAMP DEFAULT NOW(),
+                        UNIQUE(activity_id, date_key, platform)
+                    );
+                    """
+                )
+                self.conn.commit()
+                log.info("activity_detail table created successfully")
+            else:
+                log.info("activity_detail table already exists, skipping creation")
 
-    def save_activity_detail(self, activity_id: str, date_key: str, activity_data: Dict[str, Any], type_text: str) -> None:
+    def save_activity_detail(self, activity_id: str, date_key: str, activity_data: Dict[str, Any], type_text: str, platform: str) -> None:
         logging.getLogger(__name__).info(
-            "db_upsert_detail activity_id=%s date_key=%s", activity_id, date_key
+            "db_upsert_detail activity_id=%s date_key=%s platform=%s", activity_id, date_key, platform
         )
         with self.conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO activity_detail (activity_id, type, date_key, activity_data)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (activity_id, date_key) DO UPDATE SET
+                INSERT INTO activity_detail (activity_id, type, date_key, platform, activity_data)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (activity_id, date_key, platform) DO UPDATE SET
                     activity_data = EXCLUDED.activity_data
                 """,
-                (activity_id, type_text, date_key, json.dumps(activity_data, ensure_ascii=False)),
+                (activity_id, type_text, date_key, platform, json.dumps(activity_data, ensure_ascii=False)),
             )
             self.conn.commit()
 

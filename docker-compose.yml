@@ -15,21 +15,9 @@ services:
     build: .
     environment:
       - DATABASE_URL=postgresql://wellesley:wellesley@db:5432/wellesley
-      - BASE_URL=${BASE_URL}
-      - TOKEN=${TOKEN}
-      - USER_AGENT=${USER_AGENT}
-      - ACCEPT_LANGUAGE=${ACCEPT_LANGUAGE}
-      - CITY_ID=${CITY_ID}
-      - DEVICE=${DEVICE}
-      - DEVICE_UU_TOKEN=${DEVICE_UU_TOKEN}
-      - CHANNEL=${CHANNEL}
-      - PLATFORM=${PLATFORM}
-      - SYS_VERSION=${SYS_VERSION}
-      - REGISTRATION_ID=${REGISTRATION_ID}
-      - SCHEDULE_INTERVAL_MINUTES=${SCHEDULE_INTERVAL_MINUTES:-30}
-      - DOMESTIC_CATEGORY_ID=${DOMESTIC_CATEGORY_ID}
-      - OVERSEAS_CATEGORY_ID=${OVERSEAS_CATEGORY_ID}
-      - MAX_PAGES=${MAX_PAGES}
+      - TIMEOUT_SECONDS=${TIMEOUT_SECONDS:-15}
+      - RETRY_TOTAL=${RETRY_TOTAL:-3}
+      - RETRY_BACKOFF=${RETRY_BACKOFF:-0.5}
       - DELAY_MIN_SECONDS=${DELAY_MIN_SECONDS:-0.4}
       - DELAY_MAX_SECONDS=${DELAY_MAX_SECONDS:-1.2}
       - WEB_USERNAME=${WEB_USERNAME}
@@ -41,33 +29,52 @@ services:
       - db
     command: ["python", "-m", "src.web"]
 
-  scraper:
+  tiga-scraper:
     build: .
     environment:
       - DATABASE_URL=postgresql://wellesley:wellesley@db:5432/wellesley
-      - BASE_URL=${BASE_URL}
-      - TOKEN=${TOKEN}
-      - USER_AGENT=${USER_AGENT}
-      - ACCEPT_LANGUAGE=${ACCEPT_LANGUAGE}
-      - CITY_ID=${CITY_ID}
-      - DEVICE=${DEVICE}
-      - DEVICE_UU_TOKEN=${DEVICE_UU_TOKEN}
-      - CHANNEL=${CHANNEL}
-      - PLATFORM=${PLATFORM}
-      - SYS_VERSION=${SYS_VERSION}
-      - REGISTRATION_ID=${REGISTRATION_ID}
-      - SCHEDULE_INTERVAL_MINUTES=${SCHEDULE_INTERVAL_MINUTES:-30}
-      - DOMESTIC_CATEGORY_ID=${DOMESTIC_CATEGORY_ID}
-      - OVERSEAS_CATEGORY_ID=${OVERSEAS_CATEGORY_ID}
-      - MAX_PAGES=${MAX_PAGES}
+      - TIMEOUT_SECONDS=${TIMEOUT_SECONDS:-15}
+      - RETRY_TOTAL=${RETRY_TOTAL:-3}
+      - RETRY_BACKOFF=${RETRY_BACKOFF:-0.5}
       - DELAY_MIN_SECONDS=${DELAY_MIN_SECONDS:-0.4}
       - DELAY_MAX_SECONDS=${DELAY_MAX_SECONDS:-1.2}
-      - WEB_USERNAME=${WEB_USERNAME}
-      - WEB_PASSWORD=${WEB_PASSWORD}
-      - SECRET_KEY=${SECRET_KEY:-please-change-me}
+      - TIGA_BASE_URL=${TIGA_BASE_URL}
+      - TIGA_USER_AGENT=${TIGA_USER_AGENT}
+      - TIGA_ACCEPT_LANGUAGE=${TIGA_ACCEPT_LANGUAGE}
+      - TIGA_CITY_ID=${TIGA_CITY_ID}
+      - TIGA_DEVICE=${TIGA_DEVICE}
+      - TIGA_DEVICE_UU_TOKEN=${TIGA_DEVICE_UU_TOKEN}
+      - TIGA_CHANNEL=${TIGA_CHANNEL}
+      - TIGA_PLATFORM=${TIGA_PLATFORM}
+      - TIGA_SYS_VERSION=${TIGA_SYS_VERSION}
+      - TIGA_REGISTRATION_ID=${TIGA_REGISTRATION_ID}
+      - TIGA_TOKEN=${TIGA_TOKEN}
+      - TIGA_SCHEDULE_INTERVAL_MINUTES=${TIGA_SCHEDULE_INTERVAL_MINUTES:-30}
+      - TIGA_DOMESTIC_CATEGORY_ID=${TIGA_DOMESTIC_CATEGORY_ID}
+      - TIGA_OVERSEAS_CATEGORY_ID=${TIGA_OVERSEAS_CATEGORY_ID}
+      - TIGA_MAX_PAGES=${TIGA_MAX_PAGES}
     depends_on:
       - db
-    command: ["python", "-m", "src.cli", "run"]
+    command: ["python", "-m", "src.cli", "tiga"]
+
+  gaia-scraper:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://wellesley:wellesley@db:5432/wellesley
+      - TIMEOUT_SECONDS=${TIMEOUT_SECONDS:-15}
+      - RETRY_TOTAL=${RETRY_TOTAL:-3}
+      - RETRY_BACKOFF=${RETRY_BACKOFF:-0.5}
+      - DELAY_MIN_SECONDS=${DELAY_MIN_SECONDS:-0.4}
+      - DELAY_MAX_SECONDS=${DELAY_MAX_SECONDS:-1.2}
+      - GAIA_BASE_URL=${GAIA_BASE_URL}
+      - GAIA_USER_AGENT=${GAIA_USER_AGENT}
+      - GAIA_ACCEPT_LANGUAGE=${GAIA_ACCEPT_LANGUAGE}
+      - GAIA_SCHEDULE_INTERVAL_MINUTES=${GAIA_SCHEDULE_INTERVAL_MINUTES:-60}
+      - GAIA_CATALOGS=${GAIA_CATALOGS}
+      - GAIA_MAX_PAGES=${GAIA_MAX_PAGES}
+    depends_on:
+      - db
+    command: ["python", "-m", "src.cli", "gaia", "--interval-minutes", "60"]
 
 volumes:
   pgdata:

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gaia_display_name }} 数据趋势分析{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="card-title mb-0">{{ gaia_display_name }} 数据趋势分析</h3>
+        <div>
+          <a href="/gaia" class="btn btn-outline-secondary btn-sm me-2">返回 {{ gaia_display_name }} 面板</a>
+          <a href="/" class="btn btn-outline-secondary btn-sm">平台选择</a>
+        </div>
+      </div>
+      
+      <form class="row gy-2 gx-3 align-items-center mb-3" method="get">
+        <div class="col-sm-3">
+          <label class="form-label">开始日期</label>
+          <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+        </div>
+        <div class="col-sm-3">
+          <label class="form-label">结束日期</label>
+          <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label">活动ID（可选）</label>
+          <input type="text" class="form-control" name="activity_id" placeholder="筛选特定活动" value="{{ activity_id }}">
+        </div>
+        <div class="col-sm-2">
+          <label class="form-label">&nbsp;</label>
+          <button type="submit" class="btn btn-success w-100">查询</button>
+        </div>
+      </form>
+
+      <div class="mb-3">
+        <label class="form-label">数据维度选择</label>
+        <div class="row">
+          {% for key, label in dimension_options.items() %}
+          <div class="col-sm-4 col-md-3">
+            <div class="form-check">
+              <input class="form-check-input dimension-checkbox" type="checkbox" 
+                     value="{{ key }}" id="dim_{{ loop.index }}"
+                     {% if key in dimensions %}checked{% endif %}>
+              <label class="form-check-label" for="dim_{{ loop.index }}">{{ label }}</label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">趋势图表</h5>
+      {% if trend_data and trend_data|length > 0 %}
+      <div class="row">
+        {% for activity in trend_data %}
+        <div class="col-12 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">{{ activity.title }} (ID: {{ activity.activity_id }})</h6>
+            </div>
+            <div class="card-body">
+              <canvas id="chart_{{ loop.index }}" width="400" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-4">
+        <p>暂无趋势数据</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 趋势数据
+const trendData = {{ trend_data | tojson }};
+const dimensions = {{ dimensions | tojson }};
+const dimensionLabels = {{ dimension_options | tojson }};
+
+// 颜色配置
+const colors = [
+  '#28A745', '#17A2B8', '#FFC107', '#DC3545', 
+  '#6F42C1', '#FD7E14', '#20C997', '#6C757D'
+];
+
+// 为每个活动创建图表
+trendData.forEach((activity, index) => {
+  const ctx = document.getElementById(`chart_${index + 1}`).getContext('2d');
+  
+  const datasets = dimensions.map((dim, dimIndex) => ({
+    label: dimensionLabels[dim],
+    data: activity.data[dim],
+    borderColor: colors[dimIndex % colors.length],
+    backgroundColor: colors[dimIndex % colors.length] + '20',
+    fill: false,
+    tension: 0.1
+  }));
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: activity.dates,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: activity.title
+        },
+        legend: {
+          position: 'top',
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+});
+
+// 维度选择功能
+document.addEventListener('DOMContentLoaded', function() {
+  const checkboxes = document.querySelectorAll('.dimension-checkbox');
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', function() {
+      const form = document.querySelector('form');
+      const checkedDims = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+      
+      // 移除旧的维度参数
+      const formData = new FormData(form);
+      const url = new URL(window.location);
+      url.searchParams.delete('dimensions');
+      
+      // 添加新的维度参数
+      checkedDims.forEach(dim => {
+        url.searchParams.append('dimensions', dim);
+      });
+      
+      // 添加其他参数
+      formData.forEach((value, key) => {
+        if (key !== 'dimensions') {
+          url.searchParams.set(key, value);
+        }
+      });
+      
+      window.location.href = url.toString();
+    });
+  });
+});
+</script>
+{% endblock %}

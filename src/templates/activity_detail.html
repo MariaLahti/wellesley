@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}活动详情{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h3 class="card-title mb-2">{{ title }}</h3>
+      <div class="meta">活动ID：<span class="badge">{{ activity_id }}</span></div>
+      <div class="mt-2 meta">最小成行人数：<span class="value">{{ default_min_person }}</span>；最大成行人数：<span class="value">{{ default_max_person }}</span></div>
+      <div class="mt-1 meta">数据日期：<span class="value">{{ date_key }}</span></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">活动期次（{{ times_count }} 个）</h5>
+      <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle">
+          <thead>
+            <tr>
+              <th>开始日期</th>
+              <th>结束日期</th>
+              <th>状态</th>
+              <th>报名人数</th>
+              <th>价格（元）</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in times %}
+            <tr>
+              <td>{{ t.start_time }}</td>
+              <td>{{ t.end_time }}</td>
+              <td>{{ t.status_name }}</td>
+              <td>{{ t.signup_count }}</td>
+              <td>{{ '%.2f' % (t.money / 100) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

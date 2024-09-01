@@ -1,57 +1,82 @@
-## 通用活动抓取服务
+# Wellesley - 多平台活动数据采集服务
 
-支持抓取（按配置的 host 与参数）：
-- 定时抓取两个列表所有页，并逐条抓取活动详情（仅入库详情数据）
+## 快速开始
 
-数据持久化到 PostgreSQL。
+### 环境准备
 
-### 准备
-1. 安装依赖
+1. **创建虚拟环境并安装依赖**:
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. 配置环境变量
-复制 `.env.example` 为 `.env` 并填写必要字段（如 `TOKEN`）。
-
-### 使用（抓取）
-定时全量抓取：
+2. **配置环境变量**:
 ```bash
-# 默认每30分钟执行一次，读取环境变量中的分类ID
-python -m src.cli run
-
-# 通过参数覆盖
-python -m src.cli run --interval-minutes 30 --domestic-id 232 --overseas-id 836 --max-pages 10
+cp .env.example .env
+# 编辑 .env 文件，填入您的配置参数
 ```
 
-### 使用（网页）
+### 运行应用
+
+#### CLI 抓取器（定时数据收集）
+
+**Tiga 平台抓取**:
+```bash
+# 使用默认配置运行 Tiga 抓取器（定时执行）
+python -m src.cli tiga
+
+# 自定义参数运行
+python -m src.cli tiga --interval-minutes 30 --max-pages 10
+```
+
+**Gaia 平台抓取**:
+```bash
+# 单次执行 Gaia 抓取器
+python -m src.cli gaia
+
+# 指定分类运行
+python -m src.cli gaia --catalogs E L SW
+
+# 定时执行
+python -m src.cli gaia --interval-minutes 60 --max-pages 5
+```
+
+#### Web 仪表板
+
 ```bash
 python -m src.web
-# 打开 http://localhost:8000
+# 访问 http://localhost:8000
 ```
-
-可通过环境变量自定义公共参数与 UA、重试、超时等。
-
-### 备注
-- 所有请求都使用 `application/x-www-form-urlencoded` 编码，默认携带 `User-Agent`、`Accept-Language` 等头。
-- host 从环境变量 `BASE_URL` 读取。
-- 数据库仅存储活动详情数据（表：`activity_detail`）。
 
 ### Docker 部署
-1. 构建并启动：
+
 ```bash
+# 构建并启动所有服务（Web、抓取器、PostgreSQL）
 docker compose up -d --build
+
+# 服务访问地址：
+# - Web 界面: http://localhost:8000
+# - PostgreSQL: localhost:5432
 ```
-2. 服务：
-- Web: `http://localhost:8000`
-- PostgreSQL: `localhost:5432`（账号密码参见 compose 文件）
 
-### 可配置环境变量（.env）
-- BASE_URL：目标服务 host
-- TOKEN、USER_AGENT、ACCEPT_LANGUAGE 等请求头与鉴权
-- DOMESTIC_CATEGORY_ID、OVERSEAS_CATEGORY_ID：列表分类ID
-- SCHEDULE_INTERVAL_MINUTES：抓取间隔分钟
-- MAX_PAGES：每轮抓取最大页数（可选）
-- DELAY_MIN_SECONDS / DELAY_MAX_SECONDS：每次请求前的随机延迟（秒）
+## 配置说明
 
+### 通用配置
+- **DATABASE_URL**: PostgreSQL 连接字符串
+- **TIMEOUT_SECONDS**, **RETRY_TOTAL**, **RETRY_BACKOFF**: HTTP 客户端设置
+- **DELAY_MIN_SECONDS**, **DELAY_MAX_SECONDS**: 请求间随机延时
+- **WEB_USERNAME**, **WEB_PASSWORD**, **SECRET_KEY**: Web 界面认证
+
+### Tiga 平台配置 (TIGA_ 前缀)
+- **TIGA_BASE_URL**: 目标 API 主机地址（必需）
+- **TIGA_TOKEN**: API 认证令牌（必需）
+- **TIGA_USER_AGENT**, **TIGA_ACCEPT_LANGUAGE**: 请求头设置
+- **TIGA_CITY_ID**, **TIGA_DEVICE**, **TIGA_CHANNEL** 等: 平台特定参数
+- **TIGA_DOMESTIC_CATEGORY_ID**, **TIGA_OVERSEAS_CATEGORY_ID**: 分类设置
+- **TIGA_SCHEDULE_INTERVAL_MINUTES**, **TIGA_MAX_PAGES**: 调度设置
+
+### Gaia 平台配置 (GAIA_ 前缀)
+- **GAIA_BASE_URL**: 目标 API 主机地址
+- **GAIA_USER_AGENT**, **GAIA_ACCEPT_LANGUAGE**: 请求头设置
+- **GAIA_CATALOGS**: 逗号分隔的分类列表 (E,L,SW,S,WE,SY)
+- **GAIA_SCHEDULE_INTERVAL_MINUTES**, **GAIA_MAX_PAGES**: 调度设置

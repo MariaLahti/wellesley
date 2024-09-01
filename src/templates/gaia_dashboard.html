@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Gaia 旅行活动数据{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="card-title mb-0">{{ gaia_display_name }} 旅行活动数据</h3>
+        <div>
+          <a href="/gaia/trends" class="btn btn-info btn-sm me-2">数据趋势</a>
+          <a href="/" class="btn btn-outline-secondary btn-sm me-2">返回平台选择</a>
+          <a href="/logout" class="btn btn-outline-secondary btn-sm">退出登录</a>
+        </div>
+      </div>
+      
+      <form class="row gy-2 gx-3 align-items-center mb-3" method="get">
+        <div class="col-sm-4">
+          <input type="text" class="form-control" name="q" placeholder="按标题筛选" value="{{ q }}">
+        </div>
+        <div class="col-sm-3">
+          <select class="form-select" name="sort">
+            {% for key, label in sort_options.items() %}
+              <option value="{{ key }}" {% if key==sort %}selected{% endif %}>按 {{ label }} 排序</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-2">
+          <select class="form-select" name="order">
+            <option value="desc" {% if order=='desc' %}selected{% endif %}>降序</option>
+            <option value="asc" {% if order=='asc' %}selected{% endif %}>升序</option>
+          </select>
+        </div>
+        <div class="col-sm-2">
+          <select class="form-select" name="catalog">
+            <option value="all" {% if catalog_filter=='all' %}selected{% endif %}>全部分类</option>
+            <option value="E" {% if catalog_filter=='E' %}selected{% endif %}>国际旅行</option>
+            <option value="L" {% if catalog_filter=='L' %}selected{% endif %}>长途旅行</option>
+            <option value="SW" {% if catalog_filter=='SW' %}selected{% endif %}>超级周末</option>
+            <option value="S" {% if catalog_filter=='S' %}selected{% endif %}>短途旅行</option>
+            <option value="WE" {% if catalog_filter=='WE' %}selected{% endif %}>城市活动</option>
+            <option value="SY" {% if catalog_filter=='SY' %}selected{% endif %}>青春系列</option>
+          </select>
+        </div>
+        <div class="col-sm-3">
+          <input type="date" class="form-control" name="date" value="{{ date_key }}">
+        </div>
+        <div class="col-sm-2">
+          <button type="submit" class="btn btn-success w-100">应用</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle">
+          <thead>
+            <tr>
+              <th>活动ID</th>
+              <th>标题</th>
+              <th>分类</th>
+              <th><a href="?{{ query_with('sort','detail.minPrice') }}">最低价格</a></th>
+              <th><a href="?{{ query_with('sort','detail.maxPrice') }}">最高价格</a></th>
+              <th><a href="?{{ query_with('sort','detail.minSize') }}">最小人数</a></th>
+              <th><a href="?{{ query_with('sort','detail.maxSize') }}">最大人数</a></th>
+              <th>剩余名额</th>
+              <th><a href="?{{ query_with('sort','times.count') }}">团期数</a></th>
+              <th>数据日期</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row.activity_id }}</td>
+              <td><a href="/gaia/activity/{{ row.activity_id }}?date={{ date_key }}" target="_blank">{{ row.title }}</a></td>
+              <td>
+                <span class="badge bg-info">{{ row.catalog_name }}</span>
+              </td>
+              <td>¥{{ row.min_price }}</td>
+              <td>¥{{ row.max_price }}</td>
+              <td>{{ row.min_size }}人</td>
+              <td>{{ row.max_size }}人</td>
+              <td>{{ row.surplus_size }}人</td>
+              <td>{{ row.times_count }}</td>
+              <td>{{ row.date_key }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

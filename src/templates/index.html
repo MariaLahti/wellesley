@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h3 class="card-title mb-3">活动分析面板</h3>
+      <form class="row gy-2 gx-3 align-items-center mb-3" method="get">
+        <div class="col-sm-4">
+          <input type="text" class="form-control" name="q" placeholder="按标题筛选" value="{{ q }}">
+        </div>
+        <div class="col-sm-3">
+          <select class="form-select" name="sort">
+            {% for key, label in sort_options.items() %}
+              <option value="{{ key }}" {% if key==sort %}selected{% endif %}>按 {{ label }} 排序</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-2">
+          <select class="form-select" name="order">
+            <option value="desc" {% if order=='desc' %}selected{% endif %}>降序</option>
+            <option value="asc" {% if order=='asc' %}selected{% endif %}>升序</option>
+          </select>
+        </div>
+        <div class="col-sm-2">
+          <select class="form-select" name="type">
+            <option value="all" {% if type_filter=='all' %}selected{% endif %}>全部类型</option>
+            <option value="domestic" {% if type_filter=='domestic' %}selected{% endif %}>境内</option>
+            <option value="overseas" {% if type_filter=='overseas' %}selected{% endif %}>境外</option>
+          </select>
+        </div>
+        <div class="col-sm-2">
+          <select class="form-select" name="platform">
+            <option value="all" {% if platform_filter=='all' %}selected{% endif %}>全部平台</option>
+            <option value="tiga" {% if platform_filter=='tiga' %}selected{% endif %}>Tiga</option>
+            <option value="gaia" {% if platform_filter=='gaia' %}selected{% endif %}>Gaia</option>
+          </select>
+        </div>
+        <div class="col-sm-3">
+          <input type="date" class="form-control" name="date" value="{{ date_key }}">
+        </div>
+        <div class="col-sm-2">
+          <button type="submit" class="btn btn-primary w-100">应用</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle">
+          <thead>
+            <tr>
+              <th>活动ID</th>
+              <th>标题</th>
+              <th><a href="?{{ query_with('sort','collect_count') }}">收藏数</a></th>
+              <th><a href="?{{ query_with('sort','total_comment.count') }}">评论数</a></th>
+              <th><a href="?{{ query_with('sort','total_comment.average') }}">评分</a></th>
+              <th><a href="?{{ query_with('sort','activityType.one_week_uv') }}">周UV</a></th>
+              <th><a href="?{{ query_with('sort','activityType.two_month_uv') }}">月UV</a></th>
+              <th><a href="?{{ query_with('sort','activityType.history_signup_count') }}">历史报名</a></th>
+              <th>数据日期</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row.activity_id }}</td>
+              <td><a href="/activity/{{ row.activity_id }}?date={{ date_key }}&platform={{ row.platform }}" target="_blank">{{ row.title }}</a></td>
+              <td>{{ row.collect_count }}</td>
+              <td>{{ row.total_comment_count }}</td>
+              <td>{{ row.total_comment_average }}</td>
+              <td>{{ row.one_week_uv }}</td>
+              <td>{{ row.two_month_uv }}</td>
+              <td>{{ row.history_signup_count }}</td>
+              <td>{{ row.date_key }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

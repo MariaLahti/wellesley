@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Gaia 活动详情{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3 class="card-title mb-0">{{ title }}</h3>
+        <div>
+          <a href="/gaia" class="btn btn-outline-secondary btn-sm me-2">返回 {{ gaia_display_name }} 面板</a>
+          <a href="/" class="btn btn-outline-secondary btn-sm">平台选择</a>
+        </div>
+      </div>
+      <div class="meta">
+        活动ID：<span class="badge">{{ activity_id }}</span> 
+        <span class="badge bg-success">{{ gaia_display_name }} 平台</span>
+        {% if catalog_name %}<span class="badge bg-info">{{ catalog_name }}</span>{% endif %}
+      </div>
+      {% if min_price or max_price %}
+      <div class="mt-2 meta">
+        {% if min_price %}最低价格：<span class="value">¥{{ min_price }}</span>{% endif %}
+        {% if max_price %}{% if min_price %}；{% endif %}最高价格：<span class="value">¥{{ max_price }}</span>{% endif %}
+      </div>
+      {% endif %}
+      {% if min_size or max_size %}
+      <div class="mt-2 meta">
+        {% if min_size %}最小人数：<span class="value">{{ min_size }}人</span>{% endif %}
+        {% if max_size %}{% if min_size %}；{% endif %}最大人数：<span class="value">{{ max_size }}人</span>{% endif %}
+        {% if surplus_size %}；剩余名额：<span class="value">{{ surplus_size }}人</span>{% endif %}
+      </div>
+      {% endif %}
+      <div class="mt-1 meta">数据日期：<span class="value">{{ date_key }}</span></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">团期信息（{{ times_count }} 个）</h5>
+      {% if times and times|length > 0 %}
+      <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle">
+          <thead>
+            <tr>
+              <th>出发日期</th>
+              <th>返回日期</th>
+              <th>价格区间</th>
+              <th>实际价格</th>
+              <th>最大人数</th>
+              <th>已报名</th>
+              <th>剩余名额</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in times %}
+            <tr>
+              <td>{{ t.start_date }}</td>
+              <td>{{ t.end_date }}</td>
+              <td>¥{{ t.min_price }} - ¥{{ t.max_price }}</td>
+              <td>¥{{ t.price }}</td>
+              <td>{{ t.max_size }}人</td>
+              <td>{{ t.order_size }}人</td>
+              <td>{{ t.surplus_size }}人</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-4">
+        <p>暂无团期信息</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

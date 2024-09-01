@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}平台选择{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:600px; padding-top:80px;">
+  <div class="card shadow-sm">
+    <div class="card-body text-center">
+      <h3 class="card-title mb-4">选择数据平台</h3>
+      <p class="mb-4" style="color: white">请选择要查看的活动数据平台</p>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <a href="/tiga" class="btn btn-primary btn-lg w-100" style="height: 120px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+            <h4 class="mb-2">{{ tiga_display_name }} 平台</h4>
+            <small class="text-light">活动分析面板</small>
+          </a>
+        </div>
+        <div class="col-md-6 mb-3">
+          <a href="/gaia" class="btn btn-success btn-lg w-100" style="height: 120px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+            <h4 class="mb-2">{{ gaia_display_name }} 平台</h4>
+            <small class="text-light">旅行活动数据</small>
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <a href="/logout" class="btn btn-outline-secondary">退出登录</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

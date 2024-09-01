@@ -5,21 +5,28 @@ import json
 import logging
 from typing import List
 
-from .config import load_config
 from .db import Database
-from .http_client import HttpClient
-from .scraper import Scraper
+from .platforms.common.config import BaseConfig
+from .platforms.tiga.config import TigaConfig
+from .platforms.tiga.http_client import TigaHttpClient
+from .platforms.tiga.scraper import TigaScraper
+from .platforms.gaia.config import GaiaConfig
+from .platforms.gaia.http_client import GaiaHttpClient
+from .platforms.gaia.scraper import GaiaScraper
 
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="通用活动抓取 CLI")
     sub = p.add_subparsers(dest="command", required=True)
 
-    p_run = sub.add_parser("run", help="定时抓取两个列表所有页并抓取详情，仅入库详情")
-    p_run.add_argument("--interval-minutes", type=int, help="间隔分钟，默认取环境变量")
-    p_run.add_argument("--max-pages", type=int, help="最多抓取页数（可选，用于限制）")
-    p_run.add_argument("--domestic-id", help="境内分类ID（覆盖环境变量）")
-    p_run.add_argument("--overseas-id", help="境外分类ID（覆盖环境变量）")
+    p_tiga = sub.add_parser("tiga", help="抓取 Tiga 平台活动数据")
+    p_tiga.add_argument("--interval-minutes", type=int, help="间隔分钟，默认取环境变量")
+    p_tiga.add_argument("--max-pages", type=int, help="最多抓取页数（可选，用于限制）")
+
+    p_gaia = sub.add_parser("gaia", help="抓取 Gaia 平台活动数据（详情+团期）")
+    p_gaia.add_argument("--catalogs", nargs="+", help="分类列表，默认从环境变量读取")
+    p_gaia.add_argument("--max-pages", type=int, help="每个分类最大抓取页数（可选）")
+    p_gaia.add_argument("--interval-minutes", type=int, help="定时运行间隔分钟数（可选，不指定则仅运行一次）")
 
     return p
 
@@ -30,26 +37,50 @@ def main(argv: List[str] | None = None) -> int:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
     )
-    cfg = load_config()
-    db = Database.open(cfg.database_url)
-    http = HttpClient(cfg)
-    scraper = Scraper(cfg, db, http)
+    
+    base_config = BaseConfig.from_env()
+    db = Database.open(base_config.database_url)
 
-    if args.command == "run":
+    if args.command == "tiga":
         import time
-        logging.getLogger(__name__).info("scheduler_started")
-        interval = args.interval_minutes or cfg.schedule_interval_minutes
-        domestic_id = args.domestic_id or (cfg.domestic_category_id or "")
-        overseas_id = args.overseas_id or (cfg.overseas_category_id or "")
-        max_pages = args.max_pages or cfg.max_pages
-        if not domestic_id or not overseas_id:
-            raise SystemExit("DOMESTIC_CATEGORY_ID 与 OVERSEAS_CATEGORY_ID 需配置或通过参数传入")
+        tiga_config = TigaConfig()
+        tiga_http = TigaHttpClient(base_config, tiga_config)
+        tiga_scraper = TigaScraper(db, tiga_http, tiga_config)
+        
+        interval = args.interval_minutes or tiga_config.schedule_interval_minutes
+        max_pages = args.max_pages or tiga_config.max_pages
+        
+        logging.getLogger(__name__).info("tiga_scheduler_started interval_min=%s", interval)
         while True:
-            logging.getLogger(__name__).info("tick_start interval_min=%s", interval)
-            scraper.scrape_all_pages_and_details(domestic_id, overseas_id, max_pages=max_pages)
-            logging.getLogger(__name__).info("tick_end sleeping_min=%s", interval)
+            logging.getLogger(__name__).info("tiga_tick_start")
+            tiga_scraper.scrape_activities(max_pages=max_pages)
+            logging.getLogger(__name__).info("tiga_tick_end sleeping_min=%s", interval)
             time.sleep(max(1, int(interval)) * 60)
         return 0
+    
+    elif args.command == "gaia":
+        import time
+        gaia_config = GaiaConfig()
+        gaia_http = GaiaHttpClient(base_config, gaia_config)
+        gaia_scraper = GaiaScraper(db, gaia_http, gaia_config)
+        
+        if args.catalogs:
+            gaia_config.catalogs = args.catalogs
+        max_pages = args.max_pages or gaia_config.max_pages
+        interval = args.interval_minutes
+        
+        if interval:
+            logging.getLogger(__name__).info("gaia_scheduler_started catalogs=%s interval_min=%s", gaia_config.catalogs, interval)
+            while True:
+                logging.getLogger(__name__).info("gaia_tick_start")
+                gaia_scraper.scrape_activities(max_pages=max_pages)
+                logging.getLogger(__name__).info("gaia_tick_end sleeping_min=%s", interval)
+                time.sleep(max(1, int(interval)) * 60)
+        else:
+            logging.getLogger(__name__).info("gaia_single_run catalogs=%s", gaia_config.catalogs)
+            gaia_scraper.scrape_activities(max_pages=max_pages)
+        return 0
+    
     return 1
 
 

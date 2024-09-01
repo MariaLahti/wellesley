@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}登录{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:420px; padding-top:80px;">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h4 class="mb-3">登录</h4>
+      {% if error %}
+        <div class="alert alert-danger" role="alert">{{ error }}</div>
+      {% endif %}
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">账号</label>
+          <input class="form-control" name="username" autocomplete="username">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">密码</label>
+          <input type="password" class="form-control" name="password" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">登录</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
