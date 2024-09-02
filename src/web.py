@@ -182,7 +182,7 @@ def gaia_dashboard():
     where_sql = "WHERE date_key = %s AND platform = %s"
     params: List[Any] = [date_key, "gaia"]
     if q:
-        where_sql += " AND activity_data->'detail'->>'title' ILIKE %s"
+        where_sql += " AND activity_data->'detail'->>'heading' ILIKE %s"
         params.append(f"%{q}%")
     if catalog_filter != "all":
         where_sql += " AND type = %s"
