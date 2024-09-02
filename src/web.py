@@ -61,7 +61,7 @@ def platform_select():
     if not _require_login():
         return redirect(url_for("login"))
     cfg = BaseConfig.from_env()
-    return render_template("platform_select.html", 
+    return render_template("platform_select.html",
                          tiga_display_name=cfg.tiga_display_name,
                          gaia_display_name=cfg.gaia_display_name)
 
@@ -190,7 +190,7 @@ def gaia_dashboard():
 
     # Gaia 分类名称映射
     catalog_names = {
-        "E": "国际旅行", "L": "长途旅行", "SW": "超级周末", 
+        "E": "国际旅行", "L": "长途旅行", "SW": "超级周末",
         "S": "短途旅行", "WE": "城市活动", "SY": "青春系列"
     }
 
@@ -199,7 +199,7 @@ def gaia_dashboard():
                date_key,
                platform,
                type,
-               activity_data->'detail'->>'title' AS title,
+               activity_data->'detail'->>'heading' AS title,
                COALESCE(NULLIF(activity_data->'detail'->>'minPrice','')::numeric, 0) AS min_price,
                COALESCE(NULLIF(activity_data->'detail'->>'maxPrice','')::numeric, 0) AS max_price,
                COALESCE(NULLIF(activity_data->'detail'->>'minSize','')::int, 0) AS min_size,
@@ -258,28 +258,28 @@ def gaia_trends():
     if not _require_login():
         return redirect(url_for("login"))
     from datetime import date as _date, timedelta
-    
+
     # 默认日期范围为过去7天
     end_date = _date.today()
     start_date = end_date - timedelta(days=6)
-    
+
     start_date_str = request.args.get("start_date", start_date.isoformat())
     end_date_str = request.args.get("end_date", end_date.isoformat())
     activity_id = request.args.get("activity_id", "").strip()
     dimensions = request.args.getlist("dimensions") or [
         "detail.minPrice", "detail.maxPrice", "detail.minSize", "detail.maxSize", "detail.surplusSize", "times.count"
     ]
-    
+
     where_sql = "WHERE date_key >= %s AND date_key <= %s AND platform = %s"
     params = [start_date_str, end_date_str, "gaia"]
-    
+
     if activity_id:
         where_sql += " AND activity_id = %s"
         params.append(activity_id)
-    
+
     sql = f"""
         SELECT activity_id,
-               activity_data->'detail'->>'title' AS title,
+               activity_data->'detail'->>'heading' AS title,
                date_key,
                COALESCE(NULLIF(activity_data->'detail'->>'minPrice','')::numeric, 0) AS min_price,
                COALESCE(NULLIF(activity_data->'detail'->>'maxPrice','')::numeric, 0) AS max_price,
@@ -291,7 +291,7 @@ def gaia_trends():
         {where_sql}
         ORDER BY activity_id, date_key
     """
-    
+
     with pg_connect() as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
@@ -309,7 +309,7 @@ def gaia_trends():
                 }
                 for r in cur.fetchall()
             ]
-    
+
     # 组织数据按activity_id分组
     trend_data = {}
     for row in rows:
@@ -321,12 +321,12 @@ def gaia_trends():
                 "dates": [],
                 "data": {dim: [] for dim in dimensions}
             }
-        
+
         trend_data[aid]["dates"].append(row["date_key"])
         for dim in dimensions:
             key = dim.replace("detail.", "").replace("times.", "times_")
             trend_data[aid]["data"][dim].append(row.get(key, 0))
-    
+
     cfg = BaseConfig.from_env()
     return render_template(
         "gaia_trends.html",
@@ -338,7 +338,7 @@ def gaia_trends():
         gaia_display_name=cfg.gaia_display_name,
         dimension_options={
             "detail.minPrice": "最低价格",
-            "detail.maxPrice": "最高价格", 
+            "detail.maxPrice": "最高价格",
             "detail.minSize": "最小人数",
             "detail.maxSize": "最大人数",
             "detail.surplusSize": "剩余名额",
@@ -353,14 +353,14 @@ def gaia_activity_detail(activity_id: str):
         return redirect(url_for("login"))
     from datetime import date as _date
     date_key = request.args.get("date", _date.today().isoformat())
-    
+
     sql = """
         SELECT activity_data, type
         FROM activity_detail
         WHERE activity_id = %s AND date_key = %s AND platform = %s
         LIMIT 1
     """
-    
+
     with pg_connect() as conn:
         with conn.cursor() as cur:
             cur.execute(sql, (activity_id, date_key, "gaia"))
@@ -380,26 +380,26 @@ def gaia_activity_detail(activity_id: str):
                                       surplus_size=None,
                                       times=[],
                                       times_count=0)
-            
+
             activity_data, catalog = row
-    
+
     # Gaia 分类名称映射
     catalog_names = {
-        "E": "国际旅行", "L": "长途旅行", "SW": "超级周末", 
+        "E": "国际旅行", "L": "长途旅行", "SW": "超级周末",
         "S": "短途旅行", "WE": "城市活动", "SY": "青春系列"
     }
-    
+
     detail = activity_data.get("detail", {})
     times_data = activity_data.get("times", [])
-    
-    title = detail.get("title", "")
+
+    title = detail.get("heading", "")
     min_price = detail.get("minPrice")
     max_price = detail.get("maxPrice")
     min_size = detail.get("minSize")
     max_size = detail.get("maxSize")
     surplus_size = detail.get("surplusSize")
     catalog_name = catalog_names.get(catalog, catalog)
-    
+
     # 处理团期数据
     times = []
     for t in times_data:
@@ -415,7 +415,7 @@ def gaia_activity_detail(activity_id: str):
                 "order_size": trip.get("orderSize", 0),
                 "surplus_size": trip.get("surplusSize", 0),
             })
-    
+
     cfg = BaseConfig.from_env()
     return render_template(
         "gaia_activity_detail.html",
@@ -439,11 +439,11 @@ def tiga_trends():
     if not _require_login():
         return redirect(url_for("login"))
     from datetime import date as _date, timedelta
-    
+
     # 默认日期范围为过去7天
     end_date = _date.today()
     start_date = end_date - timedelta(days=6)
-    
+
     start_date_str = request.args.get("start_date", start_date.isoformat())
     end_date_str = request.args.get("end_date", end_date.isoformat())
     activity_id = request.args.get("activity_id", "").strip()
@@ -451,14 +451,14 @@ def tiga_trends():
         "collect_count", "total_comment.count", "total_comment.average",
         "activityType.one_week_uv", "activityType.two_month_uv", "activityType.history_signup_count"
     ]
-    
+
     where_sql = "WHERE date_key >= %s AND date_key <= %s AND platform = %s"
     params = [start_date_str, end_date_str, "tiga"]
-    
+
     if activity_id:
         where_sql += " AND activity_id = %s"
         params.append(activity_id)
-    
+
     sql = f"""
         SELECT activity_id,
                activity_data->>'title' AS title,
@@ -473,7 +473,7 @@ def tiga_trends():
         {where_sql}
         ORDER BY activity_id, date_key
     """
-    
+
     with pg_connect() as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
@@ -491,7 +491,7 @@ def tiga_trends():
                 }
                 for r in cur.fetchall()
             ]
-    
+
     # 组织数据按activity_id分组
     trend_data = {}
     for row in rows:
@@ -503,12 +503,12 @@ def tiga_trends():
                 "dates": [],
                 "data": {dim: [] for dim in dimensions}
             }
-        
+
         trend_data[aid]["dates"].append(row["date_key"])
         for dim in dimensions:
             key = dim.replace(".", "_").replace("activityType.", "")
             trend_data[aid]["data"][dim].append(row.get(key, 0))
-    
+
     cfg = BaseConfig.from_env()
     return render_template(
         "tiga_trends.html",
@@ -520,7 +520,7 @@ def tiga_trends():
         tiga_display_name=cfg.tiga_display_name,
         dimension_options={
             "collect_count": "收藏人数",
-            "total_comment.count": "评论人数", 
+            "total_comment.count": "评论人数",
             "total_comment.average": "评论平均分",
             "activityType.one_week_uv": "活动周访客数",
             "activityType.two_month_uv": "活动月访客数",
@@ -535,7 +535,7 @@ def tiga_activity_detail(activity_id: str):
         return redirect(url_for("login"))
     from datetime import date as _date
     date_key = request.args.get("date", _date.today().isoformat())
-    
+
     sql = """
         SELECT activity_data
         FROM activity_detail
